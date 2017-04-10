@@ -1,0 +1,11 @@
+{
+    "AUTHOR" : "ThePheonixGuy",
+    "DESCRIPTION" : "Work in Progress. Made as an interface to interface Red to a MusicBot to bridge issues with audio for now.",
+    "INSTALL_MSG" : "Thanks for grabbing my cog! This is still a work in progress.",
+    "NAME" : "Music",
+    "REQUIREMENTS" : [
+        "validators"
+    ],
+    "SHORT" : "Work in progress Music bot interface",
+    "TAGS" : []
+}
