@@ -37,8 +37,9 @@ class VoiceScore:
 
 	@commands.command(pass_context=True)
 	async def getchannel(self,ctx):
+		server = ctx.message.server
 		"""Returns the set announcement channel. Try using setchannel first."""
-		await self._getchannel(ctx)
+		await self._getchannel(ctx, server)
 
 	@commands.command(pass_context=True)
 	async def setpayoutscore(self,ctx, message:int):
@@ -90,9 +91,9 @@ class VoiceScore:
 
 
 
-	async def _getchannel(self,ctx):
-		channelID = self.settings["ChannelID"]
-		channelName = self.settings["ChannelName"]
+	async def _getchannel(self,ctx,server):
+		channelID = self.settings[server.id]["ChannelID"]
+		channelName = self.settings[server.id]["ChannelName"]
 
 		await self.bot.say("Name: {} \nID: {}".format(channelName,channelID))
 
