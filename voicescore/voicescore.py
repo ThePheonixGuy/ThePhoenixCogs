@@ -80,7 +80,7 @@ class VoiceScore:
 		printtime = datetime.datetime.fromtimestamp(int(time.time()))
 		await self.bot.say("Unix Time:{} \nDate Time: {}".format(time.time(),printtime))
 
-	async def _setupdefaults(self):
+	def _setupdefaults(self):
 
 		for server in self.bot.servers:
 			sid = server.id
