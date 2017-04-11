@@ -22,14 +22,15 @@ class VoiceScore:
 		self.activeVClist = []
 		self.payoutMembers = []
 		self.timeLast = int(time.time())
+		self._setupdefaults()
 
 	@commands.command(pass_context=True)
 	async def setchannel(self,ctx):
 		""" This sets the channel which you send the command to as the text channel for announcements"""
 		channel=ctx.message.channel
-
-		self.settings["ChannelID"] = channel.id
-		self.settings["ChannelName"] = channel.name
+		server = ctx.message.server
+		self.settings[server.id]["ChannelID"] = channel.id
+		self.settings[server.id]["ChannelName"] = channel.name
 		self.save_settings()
 		await self.bot.say("Set this channel for all Voice state Announcements")
 		await self._getchannel(ctx)
@@ -43,28 +44,16 @@ class VoiceScore:
 	async def setpayoutscore(self,ctx, message:int):
 		"""Sets the payout for when a user crosses the score threshold"""
 		channel=ctx.message.channel
-
-		self.settings["CreditsPerScore"] = message
+		server = ctx.message.server
+		self.settings[server.id]["CreditsPerScore"] = message
 		self.save_settings()
-		await self.bot.say("New Payout set to {}".format(self.settings["CreditsPerScore"]))
+		await self.bot.say("New Payout set to {}".format(self.settings[server.id]["CreditsPerScore"]))
 
 	@commands.command(pass_context=True)
 	async def getpayoutscore(self,ctx):
 		"""Returns the current payout for when a user crosses the score threshold."""
-		await self.bot.say("Payout set to {}".format(self.settings["CreditsPerScore"]))
+		await self.bot.say("Payout set to {}".format(self.settings[server.id]["CreditsPerScore"]))
 
-	@commands.command(pass_context=True)
-	async def set_tts(self,ctx,message):
-		"""Sets whether the bot repeats what you said in Text to Speech or not. Accepts only true or false as the operator."""
-		if "true" in message:
-			self.settings["TTS"] = True
-			await self.bot.say("TTS is now active")
-		elif "false" in message:
-			self.settings["TTS"] = False
-			await self.bot.say("TTS is no longer active")
-		else:
-			await self.bot.say("Please say either true or false.")
-		self.save_settings()
 
 	@commands.command(pass_context = True)
 	async def get_all_vcmembers(self,ctx):
@@ -89,6 +78,17 @@ class VoiceScore:
 		print("DateTime: {}".format(time.time()))
 		printtime = datetime.datetime.fromtimestamp(int(time.time()))
 		await self.bot.say("Unix Time:{} \nDate Time: {}".format(time.time(),printtime))
+
+	async def _setupdefaults(self):
+
+		for server in self.bot.servers:
+			sid = server.id
+			if sid not in self.settings:
+				self.settings[sid] = {"ChannelID": 0, "ChannelName": "none", "CreditsPerScore": 250, "ScoreThreshold": 1800}
+
+			
+
+
 
 	async def _getchannel(self,ctx):
 		channelID = self.settings["ChannelID"]
@@ -171,16 +171,16 @@ class VoiceScore:
 			tempNameList.append(member.name)
 
 		timestamp = datetime.datetime.fromtimestamp(int(time.time()))
-		scoreGiven = "\nScore given: {} \nMembers: {}".format(adjustedScore, tempNameList)
+		scoreGiven = "Score given: {} \nMembers: {}".format(adjustedScore, tempNameList)
 		eligChannels = "Eligible Channels: {}".format(tempEligible)
 
 		if len(self.payoutMembers) > 0:
 			payOutMems = "Payed out members: {}".format(self.payoutMembers)
 			with open("data/voicescore/log.txt", "a") as log_file:
-				log_file.write("Time: {} \n{} \n{}".format(timestamp, scoreGiven,eligChannels,payOutMems))
+				log_file.write("\nTime: \n{} \n{} \n{}".format(timestamp, scoreGiven,eligChannels,payOutMems))
 		else:
 			with open("data/voicescore/log.txt", "a") as log_file:
-				log_file.write("Time: {} \n{} \n{} \n{}".format(timestamp, scoreGiven,eligChannels,"No Members payed out"))
+				log_file.write("\nTime: \n{} \n{} \n{} \n{}".format(timestamp, scoreGiven,eligChannels,"No Members payed out"))
 
 		vcMembers = 0
 		ovcMembers = 0
@@ -208,23 +208,23 @@ class VoiceScore:
 
 	def checkScores(self, server, member):
 		currScore = self.scores[server.id][member.id]
-		threshold = int(self.settings["ScoreThreshold"])
+		threshold = int(self.settings[server.id]["ScoreThreshold"])
 		if currScore >= threshold:
 			currScore -= threshold
-			self.payOut(member)
+			self.payOut(member, server.id)
 			return currScore
 		else:
 			return currScore
 
-	def payOut(self, member):
+	def payOut(self, member,sid):
 		#payout method with bank access. check coupon cog for help. coupon redeem
 		econ = self.bot.get_cog('Economy')
 		if econ == None:
 			print("Error loading economy cog.")
 			return
-		basePot = self.settings["CreditsPerScore"] #TODO this needs to be a setting
+		basePot = self.settings[sid]["CreditsPerScore"]
 		if econ.bank.account_exists(member):
-			econ.bank.deposit_credits(member, basePot) #TODO make a settings entry
+			econ.bank.deposit_credits(member, basePot)
 			self.payoutMembers.append(member.name)
 		else:
 			print("User {} has no account, failed to pay".format(member.name))
@@ -254,11 +254,10 @@ def check_folders():
 
 
 def check_files():
-	default = {"ChannelID": 0, "ChannelName": "none", "TTS": False, "CreditsPerScore": 250, "ScoreThreshold": 1800}
 	f = "data/voicescore/settings.json"
 	if not dataIO.is_valid_json(f):
 		print("Creating default settings.json...")
-		dataIO.save_json(f, default)
+		dataIO.save_json(f, {})
 	else:
 		current = dataIO.load_json(f)
 		print("Settings found successfully")
