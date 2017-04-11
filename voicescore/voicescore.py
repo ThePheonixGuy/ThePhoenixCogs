@@ -133,7 +133,7 @@ class VoiceScore:
 
 
 		
-
+		self.saveChannels()
 		# for loop to check conditions of eligibility of member. not deafened, not single channel afk,
 		# not afk channel. if works, update the active voice client list.
 		tempVClist = []
@@ -189,9 +189,9 @@ class VoiceScore:
 						print("{} users now AFK".format(vcMembers))
 				else:
 					self.eligibleChannels[currServer.id][channel.id] = False
-			self.saveChannels()
+			
 
-
+		self.saveChannels()
 		self.saveScores()
 		self.timeLast = int(time.time())
 		self.payoutMembers = []
