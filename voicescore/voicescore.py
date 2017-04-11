@@ -124,6 +124,15 @@ class VoiceScore:
 		# doesnt actually need to save to json. Did that for figurings
 		tempEligible = []
 		for currServer in self.bot.servers:
+			sid = currServer.id
+			if sid not in self.activeVCUsers.keys():
+				self.activeVCUsers[sid] = {}
+			if sid not in self.eligibleChannels.keys():
+				self.eligibleChannels[sid] = {}
+			if sid not in self.scores.keys():
+				self.scores[sid] = {}
+			if sid not in self.scores.keys():
+				self.scores[sid] = {}
 			for channel in currServer.channels:
 				vcMembers = len(channel.voice_members)
 				ovcMembers = vcMembers - 1
@@ -131,7 +140,7 @@ class VoiceScore:
 					if channel != afkChannel:
 						tempEligible.append("{}".format(channel))
 
-
+		sid = server.id
 		
 		self.saveChannels()
 		# for loop to check conditions of eligibility of member. not deafened, not single channel afk,
